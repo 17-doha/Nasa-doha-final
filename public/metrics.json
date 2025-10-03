@@ -1,0 +1,60 @@
+{
+  "models": [
+    {
+      "modelName": "Stacking Classifier",
+      "version": "2.2.0",
+      "trainingDate": "2025-10-02",
+      "isActive": true,
+      "notes": "Holdout evaluation from dynamic training.",
+      "metrics": {
+        "accuracy": 0.7757326229111164,
+        "precision_macro": 0.78,
+        "recall_macro": 0.78,
+        "f1_macro": 0.78,
+        "roc_auc_macro": 0.9155698727266813
+      },
+      "labels": [
+        "CANDIDATE",
+        "CONFIRMED",
+        "FALSE POSITIVE"
+      ],
+      "confusionMatrix": [
+        [1129, 220, 256],
+        [132, 1070, 57],
+        [168, 93, 1004]
+      ],
+      "report": {
+        "CANDIDATE": {
+          "precision": 0.79,
+          "recall": 0.70,
+          "f1_score": 0.74,
+          "support": 1605
+        },
+        "CONFIRMED": {
+          "precision": 0.77,
+          "recall": 0.85,
+          "f1_score": 0.81,
+          "support": 1259
+        },
+        "FALSE POSITIVE": {
+          "precision": 0.76,
+          "recall": 0.79,
+          "f1_score": 0.78,
+          "support": 1265
+        },
+        "macro avg": {
+          "precision": 0.78,
+          "recall": 0.78,
+          "f1_score": 0.78,
+          "support": 4129
+        },
+        "weighted avg": {
+          "precision": 0.78,
+          "recall": 0.78,
+          "f1_score": 0.77,
+          "support": 4129
+        }
+      }
+    }
+  ]
+}

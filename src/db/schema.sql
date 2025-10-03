@@ -1,0 +1,21 @@
+-- -- Create users table with unique username constraint
+-- CREATE TABLE users (
+--     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+--     username TEXT UNIQUE NOT NULL,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+-- );
+
+-- -- Create scores table with foreign key to users
+-- CREATE TABLE scores (
+--     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+--     user_id UUID REFERENCES users(id),
+--     username TEXT NOT NULL,
+--     score INTEGER NOT NULL,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+--     CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+-- );
+
+-- -- Create index for score sorting
+-- CREATE INDEX scores_score_idx ON scores(score DESC);
+-- -- Create index for username lookups
+-- CREATE INDEX scores_username_idx ON scores(username);

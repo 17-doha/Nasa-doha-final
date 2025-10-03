@@ -1,0 +1,7 @@
+name,disposition,pl_orbper,pl_rade,st_teff,st_rad,pl_eqt,image
+Mercury,CONFIRMED,87.97,0.383,5778,1.0,440,Mercury.jpg
+Venus,CONFIRMED,224.70,0.949,5778,1.0,737,Venus.jpg
+Earth,CONFIRMED,365.25,1.000,5778,1.0,288,Earth.jpg
+Mars,CONFIRMED,686.98,0.532,5778,1.0,210,Mars.jpg
+Kepler-22b,CONFIRMED,289.9,2.4,5518,0.98,262,Kepler-22b.jpg
+
