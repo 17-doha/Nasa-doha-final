@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount your local backend code into the container
+      - ./backend:/app
+    environment:
+      # This enables hot-reloading for Flask
+      - FLASK_ENV=development
+      - FLASK_APP=app.py # Explicitly tell Flask what file to run
+
+  frontend:
+    build:
+      context: . # Assuming your package.json is in the root
+      dockerfile: Dockerfile.frontend
+    ports:
+      # Make sure the host port matches the one exposed in the Dockerfile
+      - "5173:5173"
+    volumes:
+      # Mount your entire project directory to enable hot-reloading
+      # Docker will use the container's node_modules by default
+      - .:/app
+      - /app/node_modules # Add this anonymous volume to prevent local node_modules from overwriting the container's
+    depends_on:
+      - backend

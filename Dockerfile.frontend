@@ -1,0 +1,19 @@
+# Use a Node.js base image
+FROM node:20-alpine
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package files and install dependencies
+# This is done first to leverage Docker's layer caching
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+# Copy the rest of your frontend source code
+COPY . .
+
+# Expose the port your dev server runs on (e.g., 5173 for Vite, 3000 for CRA)
+EXPOSE 5173
+
+# The command to start the development server
+CMD ["yarn", "dev"]

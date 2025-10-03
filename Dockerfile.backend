@@ -1,0 +1,22 @@
+# Use a slim Python base image
+FROM python:3.9-slim-bullseye
+
+# Set the working directory
+WORKDIR /app
+
+# Install system dependencies that might be needed by Python packages
+RUN apt-get update && apt-get install -y build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python requirements
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the application code (optional for dev, as volume will overwrite it)
+COPY backend/ .
+
+# Expose the port the app runs on
+EXPOSE 5000
+
+# Run the application using Flask's development server
+CMD ["flask", "run", "--host=0.0.0.0"]
