@@ -130,10 +130,10 @@ def load_global_artifacts():
                     explainer = shap.TreeExplainer(lgbm_model)
                     print("✅ SHAP TreeExplainer created for LightGBM model.")
                 except Exception as e:
-                    print(f"⚠️ Could not create SHAP TreeExplainer: {e}")
+                    print(f"⚠ Could not create SHAP TreeExplainer: {e}")
                     traceback.print_exc()
             else:
-                print("⚠️ Could not find a LightGBM base estimator for SHAP explanation.")
+                print("⚠ Could not find a LightGBM base estimator for SHAP explanation.")
 
             # Try to obtain FEATURE_NAMES_OUT from the preprocessor
             if preprocessor is not None and MODEL_FEATURE_COLS:
@@ -146,20 +146,20 @@ def load_global_artifacts():
                         FEATURE_NAMES_OUT = list(preprocessor.get_feature_names_out())
                     except Exception:
                         # Fallback: use a generic f0..fN naming
-                        print("⚠️ Preprocessor.get_feature_names_out failed. Using fallback feature names.")
+                        print("⚠ Preprocessor.get_feature_names_out failed. Using fallback feature names.")
                         # Determine feature count by fitting a dummy sample if possible
                         dummy_df = pd.DataFrame(columns=MODEL_FEATURE_COLS, index=[0]).fillna(0)
                         try:
-                           dummy_transformed = preprocessor.transform(dummy_df)
-                           n_features = dummy_transformed.shape[1]
-                           FEATURE_NAMES_OUT = [f"f{i}" for i in range(n_features)]
+                            dummy_transformed = preprocessor.transform(dummy_df)
+                            n_features = dummy_transformed.shape[1]
+                            FEATURE_NAMES_OUT = [f"f{i}" for i in range(n_features)]
                         except:
-                           FEATURE_NAMES_OUT = [f"f{i}" for i in range(len(MODEL_FEATURE_COLS))]
+                            FEATURE_NAMES_OUT = [f"f{i}" for i in range(len(MODEL_FEATURE_COLS))]
             
             print(f"✅ Preprocessed feature count for SHAP (len): {len(FEATURE_NAMES_OUT)}")
 
         else:
-            print("⚠️ Pipeline does not have named_steps; cannot extract preprocessor/estimator easily.")
+            print("⚠ Pipeline does not have named_steps; cannot extract preprocessor/estimator easily.")
 
     except FileNotFoundError:
         print(f"❌ Error: '{MODEL_PATH}' or '{META_PATH}' not found. Endpoints may fail until model is trained.")
@@ -239,7 +239,7 @@ def _prepare_uploaded_data(df_raw: pd.DataFrame) -> pd.DataFrame:
         # Identify possible original column names
         original_cols = [col for col in source_map.values() if col in df.columns and col != standard_name]
         if original_cols:
-            # Rename the *first* matching original column to the standard name
+            # Rename the first matching original column to the standard name
             df = df.rename(columns={original_cols[0]: standard_name})
             
     # 2. FIX: Coerce designated numeric columns to float to handle embedded strings (the ValueError)
@@ -328,66 +328,57 @@ def classify():
         # Reindex to match the columns the preprocessor expects, filling any missing required columns with NaN
         model_features_df = df_engineered.reindex(columns=MODEL_FEATURE_COLS, fill_value=np.nan)
 
-        # 3. Prediction
+        # --- START: New integrated code ---
         probabilities = pipeline.predict_proba(model_features_df)[0]
-        prediction_idx = int(np.argmax(probabilities))
-        prediction = CATEGORIES[prediction_idx] if 0 <= prediction_idx < len(CATEGORIES) else "UNKNOWN"
+        prediction_idx = np.argmax(probabilities)
+        prediction = CATEGORIES[prediction_idx]
         confidence = float(probabilities[prediction_idx])
 
-        # 4. SHAP values (if available)
+        # --- 4. SHAP Value Calculation (reverted to original, stable logic) ---
         shap_values_for_response = []
-        if explainer is not None and preprocessor is not None:
+        if explainer and preprocessor:
             try:
+                # Transform the input using the preprocessor to get the features for the base model
                 X_transformed = preprocessor.transform(model_features_df)
                 
-                # Convert sparse matrix to dense array if necessary
-                if sparse.issparse(X_transformed):
-                    X_transformed = X_transformed.toarray()
+                # Calculate SHAP values for the transformed data
+                shap_values_all_classes = explainer.shap_values(X_transformed)
                 
-                # shap_values may be a list (multiclass) or array
-                shap_values_all = explainer.shap_values(X_transformed)
-
-                if isinstance(shap_values_all, list):
-                    # For multiclass, select SHAP values for the predicted class
-                    shap_values_for_prediction = shap_values_all[prediction_idx]
+                # Handle SHAP output format (it's a list for multi-class classifiers)
+                if isinstance(shap_values_all_classes, list):
+                    # Pick the SHAP values for the predicted class
+                    shap_values_for_prediction = shap_values_all_classes[prediction_idx]
                 else:
-                    # For binary classification (or if the model structure is 1D), use the array directly
-                    shap_values_for_prediction = shap_values_all
+                    shap_values_for_prediction = shap_values_all_classes
 
-                # Ensure array is 1D (for single sample)
-                shap_arr = np.array(shap_values_for_prediction)
-                if shap_arr.ndim > 1:
-                    shap_arr = shap_arr[0]
+                # Extract the values for our single instance (shape is (1, n_features))
+                if isinstance(shap_values_for_prediction, np.ndarray) and shap_values_for_prediction.ndim > 1:
+                    shap_values_for_prediction = shap_values_for_prediction[0]
                 
-                shap_list = shap_arr.flatten().tolist()
+                shap_values_list = shap_values_for_prediction.flatten().tolist()
                 
-                # Use the preprocessed feature names
-                names = FEATURE_NAMES_OUT
-                
-                # Fallback check just in case feature name calculation failed to match shape
-                if len(names) != len(shap_list):
-                    names = [f"f{i}" for i in range(len(shap_list))]
-
-                for fname, sval in zip(names, shap_list):
-                    shap_values_for_response.append({"feature": str(fname), "value": float(sval)})
-
+                # Combine feature names with their corresponding SHAP values
+                for feature_name, shap_value in zip(FEATURE_NAMES_OUT, shap_values_list):
+                    shap_values_for_response.append({
+                        "feature": str(feature_name), 
+                        "value": float(shap_value)
+                    })
             except Exception as e:
                 print(f"❌ Error during SHAP calculation: {e}")
                 traceback.print_exc()
 
-        # 5. Final response
-        return jsonify(
-            {
-                "prediction": prediction,
-                "confidence": confidence,
-                "probabilities": {cat: float(prob) for cat, prob in zip(CATEGORIES, probabilities)},
-                "shap_values": shap_values_for_response,
-            }
-        )
-
+        # --- 5. Final Response ---
+        return jsonify({
+            'prediction': prediction,
+            'confidence': confidence,
+            'probabilities': {cat: float(prob) for cat, prob in zip(CATEGORIES, probabilities)},
+            'shap_values': shap_values_for_response,
+        })
+        # --- END: New integrated code ---
+        
     except Exception as e:
         traceback.print_exc()
-        return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500
+        return jsonify({'error': f'Internal Server Error: {str(e)}'}), 500
 
 
 @app.route("/api/train", methods=["POST"])
@@ -426,11 +417,11 @@ def train_model_endpoint():
         df_prepared = _prepare_uploaded_data(df_raw) 
 
         if df_prepared.empty:
-             # Check if there are any valid labeled examples left
-             if df_raw.shape[0] > 0:
-                 return jsonify({"error": "Training dataset is empty after label mapping and missing value removal. Please ensure your file has valid labels (e.g., CONFIRMED, FP, PC, etc.)."}), 400
-             else:
-                 return jsonify({"error": "The uploaded file is empty or could not be read."}), 400
+                 # Check if there are any valid labeled examples left
+                 if df_raw.shape[0] > 0:
+                      return jsonify({"error": "Training dataset is empty after label mapping and missing value removal. Please ensure your file has valid labels (e.g., CONFIRMED, FP, PC, etc.)."}), 400
+                 else:
+                      return jsonify({"error": "The uploaded file is empty or could not be read."}), 400
 
 
         # 5. Train and Evaluate

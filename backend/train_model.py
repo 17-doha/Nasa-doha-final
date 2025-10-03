@@ -129,7 +129,7 @@ def save_metrics_json(
     
     metrics_path = os.path.join(os.getcwd(), 'model_metrics.json')
     try:
-        metrics_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model_metrics.json')
+        metrics_path = os.path.join(os.path.dirname(os.path.abspath(_file_)), 'model_metrics.json')
     except NameError:
         pass 
         
@@ -387,7 +387,7 @@ def main():
             "training_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         
-        base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else os.getcwd()
+        base_dir = os.path.dirname(os.path.abspath(_file)) if 'file_' in locals() else os.getcwd()
         model_path = os.path.join(base_dir, MODEL_FILENAME)
         meta_path = os.path.join(base_dir, META_FILENAME)
         

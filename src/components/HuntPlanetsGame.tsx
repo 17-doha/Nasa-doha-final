@@ -27,6 +27,9 @@ type PlanetData = {
   orbital_period_days: string;
   ra_deg: string;
   dec_deg: string;
+  Question: string;
+  Choice1: string;
+  'Choice2(correct)': string;
 };
 
 type LeaderboardEntry = { name: string; score: number };
@@ -38,7 +41,7 @@ type PlanetFeature = {
 };
 
 const HuntPlanetsGame = () => {
-  const [userGuess, setUserGuess] = useState<null | boolean>(null);
+  const [userGuess, setUserGuess] = useState<null | string>(null);
   const [score, setScore] = useState<number>(0);
   const [username, setUsername] = useState<string>('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -50,21 +53,18 @@ const HuntPlanetsGame = () => {
   const [csvError, setCsvError] = useState<string>('');
   const [planetData, setPlanetData] = useState<PlanetData[]>([]);
   const [currentPlanet, setCurrentPlanet] = useState<PlanetData | null>(null);
+  const [shuffledChoices, setShuffledChoices] = useState<string[]>([]);
 
   // Fix the scoring logic
-  const handleGuess = (guess: boolean) => {
+  const handleGuess = (guess: string) => {
     if (!currentPlanet) return;
     
     setUserGuess(guess);
-    const isConfirmed = currentPlanet.disposition.trim().toUpperCase() === 'CONFIRMED';
+    const isCorrect = guess === currentPlanet['Choice2(correct)'];
     
-    // User guesses "Confirmed Planet" (true) and it is CONFIRMED -> +100
-    // User guesses "Not Confirmed" (false) and it is NOT CONFIRMED -> +100
-    // Wrong guesses -> -50
-    const isCorrect = guess === isConfirmed;
     const points = isCorrect ? 100 : -50;
     
-    console.log('Disposition:', currentPlanet.disposition, 'Guess:', guess, 'Points:', points);
+    console.log('Correct Answer:', currentPlanet['Choice2(correct)'], 'Guess:', guess, 'Points:', points);
     setScore(prev => prev + points);
   };
 
@@ -224,10 +224,8 @@ const HuntPlanetsGame = () => {
         // Prefer data/ folder: data/planets.csv, then data/planets_cleaned.csv, then root fallbacks
         const baseUrl = (import.meta as any).env?.BASE_URL || '/';
         const candidates = [
-          `${baseUrl}data/planets.csv`,
-          `${baseUrl}data/planets_cleaned.csv`,
-          `${baseUrl}planets.csv`,
-          `${baseUrl}planets_cleaned.csv`,
+          `${baseUrl}data/planetsQuestions.csv`,
+          `${baseUrl}planetsQuestions.csv`,
         ];
 
         let res: Response | null = null;
@@ -239,7 +237,7 @@ const HuntPlanetsGame = () => {
           }
         }
         if (!res) {
-          setCsvError('CSV not found. Place planets.csv in public/data/ (or public/).');
+          setCsvError('CSV not found. Place planetsQuestions.csv in public/data/ (or public/).');
           return;
         }
         const text = await res.text();
@@ -276,7 +274,7 @@ const HuntPlanetsGame = () => {
   useEffect(() => {
     const loadPlanetData = async () => {
       try {
-        const response = await fetch('/src/data/planets.csv');
+        const response = await fetch('/src/data/planetsQuestions.csv');
         const text = await response.text();
         const lines = text.split('\n').filter(line => line.trim());
         const headers = lines[0].split(',').map(h => h.trim());
@@ -302,7 +300,12 @@ const HuntPlanetsGame = () => {
 
   const setRandomPlanet = (planets: PlanetData[]) => {
     const randomIndex = Math.floor(Math.random() * planets.length);
-    setCurrentPlanet(planets[randomIndex]);
+    const planet = planets[randomIndex];
+    setCurrentPlanet(planet);
+    if (planet) {
+      const choices = [planet.Choice1, planet['Choice2(correct)']].sort(() => Math.random() - 0.5);
+      setShuffledChoices(choices);
+    }
   };
 
   const header = useMemo(() => (csvRows.length > 0 ? csvRows[0] : []), [csvRows]);
@@ -351,7 +354,7 @@ const HuntPlanetsGame = () => {
 
   // Build a map of available images in /src/data/Images using Vite's glob.
   // This ensures we use actual served URLs rather than assuming paths.
-  const imageModules = import.meta.glob('/src/data/Images/*.{png,jpg}', { eager: true, as: 'url' }) as Record<string, string>;
+  const imageModules = import.meta.glob('/src/data/Images/*.{png,jpg}', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
   const imageNameToUrl: Record<string, string> = {};
   Object.entries(imageModules).forEach(([path, url]) => {
     const name = path.split('/').pop()!.toLowerCase();
@@ -489,7 +492,7 @@ const HuntPlanetsGame = () => {
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Game Panel */}
         <div className="lg:col-span-2">
-          <h2 className="text-4xl font-bold text-center mb-2">Is this a Planet?</h2>
+          <h2 className="text-4xl font-bold text-center mb-2">Planet Trivia Challenge</h2>
           <Card>
             {currentPlanet ? (
               <>
@@ -514,46 +517,46 @@ const HuntPlanetsGame = () => {
                       }}
                     />
                   </div>
-
-                  {/* Feature Bars */}
-                  <div className="space-y-4">
-                    {getPlanetFeatures(currentPlanet).map((feature) => (
-                      <div key={feature.label} className="bg-slate-800 p-4 rounded-lg">
-                        <div className="flex justify-between text-sm text-slate-300 mb-2">
-                          <span>{feature.label}:</span>
-                          <span>{isNaN(parseFloat(feature.value)) ? 'N/A' : parseFloat(feature.value).toFixed(2)}</span>
-                        </div>
-                        <div className="w-full bg-slate-700 rounded-full h-2.5">
-                          <motion.div
-                            className="bg-cyan-500 h-2.5 rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ 
-                              width: `${normalizeValue(feature.value, feature.maxValue)}%` 
-                            }}
-                            transition={{ duration: 0.8 }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
 
                 {userGuess === null ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      onClick={() => handleGuess(true)}
-                      className="w-full flex items-center justify-center p-6 text-2xl font-bold bg-green-600/20 text-green-300 border-2 border-green-500 rounded-lg hover:bg-green-600/40 transition"
-                    >
-                      <CheckCircle className="mr-2" /> Confirmed Planet
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      onClick={() => handleGuess(false)}
-                      className="w-full flex items-center justify-center p-6 text-2xl font-bold bg-red-600/20 text-red-300 border-2 border-red-500 rounded-lg hover:bg-red-600/40 transition"
-                    >
-                      <XCircle className="mr-2" /> Not Confirmed
-                    </motion.button>
+                  <div>
+                    <h3 className="text-xl font-semibold text-center mb-4">{currentPlanet.Question}</h3>
+
+                    {/* Feature Bars */}
+                    <div className="space-y-4 mb-6">
+                      {getPlanetFeatures(currentPlanet).map((feature) => (
+                        <div key={feature.label} className="bg-slate-800 p-4 rounded-lg">
+                          <div className="flex justify-between text-sm text-slate-300 mb-2">
+                            <span>{feature.label}:</span>
+                            <span>{isNaN(parseFloat(feature.value)) ? 'N/A' : parseFloat(feature.value).toFixed(2)}</span>
+                          </div>
+                          <div className="w-full bg-slate-700 rounded-full h-2.5">
+                            <motion.div
+                              className="bg-cyan-500 h-2.5 rounded-full"
+                              initial={{ width: 0 }}
+                              animate={{ 
+                                width: `${normalizeValue(feature.value, feature.maxValue)}%` 
+                              }}
+                              transition={{ duration: 0.8 }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {shuffledChoices.map((choice, index) => (
+                        <motion.button
+                          key={index}
+                          whileHover={{ scale: 1.05 }}
+                          onClick={() => handleGuess(choice)}
+                          className="w-full flex items-center justify-center p-4 text-lg font-bold bg-slate-700 text-white border-2 border-slate-600 rounded-lg hover:bg-slate-600 transition"
+                        >
+                          {choice}
+                        </motion.button>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   <AnimatePresence>
@@ -565,47 +568,18 @@ const HuntPlanetsGame = () => {
                       <h3 className="text-2xl font-bold text-center">Results</h3>
                       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
                         <div className="p-4 bg-slate-700/50 rounded-lg">
-                          <p className="text-sm text-slate-400">Your Guess</p>
-                          <p className={`text-2xl font-bold ${userGuess ? 'text-green-400' : 'text-red-400'}`}>
-                            {userGuess ? 'Planet' : 'Not a Planet'}
+                          <p className="text-sm text-slate-400">Your Answer</p>
+                          <p className={`text-xl font-bold ${userGuess === currentPlanet['Choice2(correct)'] ? 'text-green-400' : 'text-red-400'}`}>
+                            {userGuess}
                           </p>
                         </div>
                         <div className="p-4 bg-slate-700/50 rounded-lg">
-                          <p className="text-sm text-slate-400">AI Prediction</p>
+                          <p className="text-sm text-slate-400">Correct Answer</p>
                           <p
-                            className={`text-2xl font-bold ${
-                              ((header.length && currentRow.length) ? derivedCandidate.aiPrediction.isPlanet : MOCK_GAME_CANDIDATE.aiPrediction.isPlanet)
-                                ? 'text-green-400'
-                                : 'text-red-400'
-                            }`}
+                            className={`text-xl font-bold text-green-400`}
                           >
-                            {((header.length && currentRow.length) ? derivedCandidate.aiPrediction.isPlanet : MOCK_GAME_CANDIDATE.aiPrediction.isPlanet)
-                              ? 'Planet'
-                              : 'Not a Planet'}
+                            {currentPlanet['Choice2(correct)']}
                           </p>
-                        </div>
-                      </div>
-                      <div className="mt-6">
-                        <h4 className="text-lg font-semibold text-cyan-400 flex items-center justify-center">
-                          <Bot className="mr-2" />Feature Hints
-                        </h4>
-                        <div className="mt-3 space-y-2">
-                          {(header.length && currentRow.length ? derivedCandidate.aiPrediction.reasoning : MOCK_GAME_CANDIDATE.aiPrediction.reasoning).map((reason) => (
-                            <div key={reason.feature}>
-                              <div className="flex justify-between text-sm text-slate-300 mb-1">
-                                <span>{reason.feature}</span>
-                                <span>{(reason.importance * 100).toFixed(0)}%</span>
-                              </div>
-                              <div className="w-full bg-slate-700 rounded-full h-2.5">
-                                <motion.div
-                                  className="bg-cyan-500 h-2.5 rounded-full"
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${reason.importance * 100}%` }}
-                                  transition={{ duration: 0.8 }}
-                                ></motion.div>
-                              </div>
-                            </div>
-                          ))}
                         </div>
                       </div>
                       <div className="text-center mt-8">
@@ -614,7 +588,7 @@ const HuntPlanetsGame = () => {
                           onClick={resetGame}
                           className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition"
                         >
-                          Next Candidate
+                          Next Question
                         </motion.button>
                       </div>
                     </motion.div>
