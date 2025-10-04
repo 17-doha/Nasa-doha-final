@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 COPY . .
+# The yarn build command will automatically copy files from /public to /dist
 RUN yarn build
 
 
@@ -26,6 +27,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY backend/ .
 
 # Copy built frontend from the builder stage into the Nginx public folder
+# This will now include your /data folder with the CSVs
 COPY --from=builder /app/dist /var/www/html
 
 # Copy configuration files for Nginx and Supervisor
