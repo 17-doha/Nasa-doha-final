@@ -1,15 +1,21 @@
-# ---- Stage 1: Build the frontend ----
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 COPY . .
+
+# Declare build arguments for Supabase credentials
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+# Run the build command, which will use the ARGs as environment variables
 # The yarn build command will automatically copy files from /public to /dist
 RUN yarn build
 
 
 # ---- Stage 2: Final Image ----
+# (No changes needed in this stage)
 FROM python:3.9-slim-bullseye
 
 WORKDIR /app
