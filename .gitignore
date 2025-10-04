@@ -38,3 +38,6 @@ __pycache__/
 *.pyo
 *.pyd
 *.egg-info/
+*.pkl
+!backend/exo_model.pkl
+!backend/exo_meta.pkl
