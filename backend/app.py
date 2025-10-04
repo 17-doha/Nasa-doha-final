@@ -281,7 +281,7 @@ def _prepare_uploaded_data(df_raw: pd.DataFrame) -> pd.DataFrame:
 
 # --- API Endpoints ---
 
-@app.route("/classify", methods=["POST"])
+@app.route("/api/classify", methods=["POST"])
 def classify():
     """Handles the POST request for classification, including feature engineering."""
     if pipeline is None or metadata is None:
