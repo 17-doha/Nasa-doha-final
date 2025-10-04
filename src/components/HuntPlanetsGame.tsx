@@ -1,25 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react"; // FIX 1: Removed unused 'useMemo'
 import { motion, AnimatePresence } from "framer-motion";
 import { Crown } from "lucide-react";
 import Card from "./ui/Card";
 import Section from "./ui/Section";
 import { supabase } from "../lib/supabaseClient";
-
-const MOCK_GAME_CANDIDATE = {
-  id: "cand_001",
-  lightCurveUrl:
-    "https://placehold.co/600x300/020617/38bdf8?text=Light+Curve+Data",
-  aiPrediction: {
-    isPlanet: true,
-    confidence: 0.92,
-    reasoning: [
-      { feature: "Transit Depth", importance: 0.45 },
-      { feature: "Orbital Period", importance: 0.3 },
-      { feature: "Stellar Radius", importance: 0.15 },
-      { feature: "Transit Duration", importance: 0.1 },
-    ],
-  },
-};
 
 // Add type for planet data
 type PlanetData = {
@@ -46,17 +30,16 @@ const HuntPlanetsGame = () => {
   const [score, setScore] = useState<number>(0);
   const [username, setUsername] = useState<string>("");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [csvRows, setCsvRows] = useState<string[][]>([]);
-  const [currentRowIndex, setCurrentRowIndex] = useState<number>(-1);
+  const [_csvRows, setCsvRows] = useState<string[][]>([]); // FIX 2: Added underscore
+  const [_currentRowIndex, setCurrentRowIndex] = useState<number>(-1); // FIX 3: Added underscore
   const [saveMessage, setSaveMessage] = useState<string>("");
   const [saveError, setSaveError] = useState<string>("");
   const [saving, setSaving] = useState<boolean>(false);
   const [csvError, setCsvError] = useState<string>("");
   const [planetData, setPlanetData] = useState<PlanetData[]>([]);
   const [currentPlanet, setCurrentPlanet] = useState<PlanetData | null>(null);
-  const [shuffledChoices, setShuffledChoices] = useState<string[]>([]);
+  const [shuffledChoices, setShuffledChoices] = useState<string[]>([]); // Fix the scoring logic
 
-  // Fix the scoring logic
   const handleGuess = (guess: string) => {
     if (!currentPlanet) return;
 
@@ -74,9 +57,8 @@ const HuntPlanetsGame = () => {
       points
     );
     setScore((prev) => prev + points);
-  };
+  }; // Fix feature bar normalization
 
-  // Fix feature bar normalization
   const normalizeValue = (value: string, max: number): number => {
     const num = parseFloat(value);
     if (isNaN(num) || !isFinite(num)) return 0;
@@ -104,9 +86,8 @@ const HuntPlanetsGame = () => {
   const resetGame = () => {
     setUserGuess(null);
     setRandomPlanet(planetData);
-  };
+  }; // Load leaderboard (top 3)
 
-  // Load leaderboard (top 3)
   useEffect(() => {
     const loadTop3 = async () => {
       if (!supabase) {
@@ -126,9 +107,8 @@ const HuntPlanetsGame = () => {
       }
     };
     loadTop3();
-  }, []);
+  }, []); // Save score
 
-  // Save score
   const saveScore = async () => {
     setSaveMessage("");
     setSaveError("");
@@ -144,9 +124,8 @@ const HuntPlanetsGame = () => {
         setSaving(false);
         return;
       }
-      const name = username.trim();
+      const name = username.trim(); // Get existing user's highest score
 
-      // Get existing user's highest score
       const { data: existingScores } = await supabase
         .from("scores")
         .select("score")
@@ -154,9 +133,8 @@ const HuntPlanetsGame = () => {
         .order("score", { ascending: false })
         .limit(1);
 
-      const currentHighScore = existingScores?.[0]?.score || 0;
+      const currentHighScore = existingScores?.[0]?.score || 0; // Only save if new score is higher than existing score
 
-      // Only save if new score is higher than existing score
       if (score > currentHighScore) {
         // First ensure user exists
         const { data: existingUser } = await supabase
@@ -180,9 +158,8 @@ const HuntPlanetsGame = () => {
             return;
           }
           userId = newUser.id;
-        }
+        } // Save the new high score
 
-        // Save the new high score
         const { error: scoreError } = await supabase.from("scores").insert({
           user_id: userId,
           username: name,
@@ -197,9 +174,8 @@ const HuntPlanetsGame = () => {
         setSaveMessage("New high score saved!");
       } else {
         setSaveMessage("Score not saved - not a new high score");
-      }
+      } // Refresh leaderboard with unique top scores
 
-      // Refresh leaderboard with unique top scores
       const { data: lbData } = await supabase
         .from("scores")
         .select("username, score")
@@ -223,9 +199,8 @@ const HuntPlanetsGame = () => {
     } finally {
       setSaving(false);
     }
-  };
+  }; // Attempt to load CSV for real candidates
 
-  // Attempt to load CSV for real candidates
   useEffect(() => {
     const fetchCsv = async () => {
       try {
@@ -278,9 +253,8 @@ const HuntPlanetsGame = () => {
       }
     };
     fetchCsv();
-  }, []);
+  }, []); // Load planet data from src/data folder
 
-  // Load planet data from src/data folder
   useEffect(() => {
     const loadPlanetData = async () => {
       try {
@@ -318,86 +292,8 @@ const HuntPlanetsGame = () => {
       );
       setShuffledChoices(choices);
     }
-  };
+  }; // Build a map of available images in /src/data/Images using Vite's glob. // This ensures we use actual served URLs rather than assuming paths.
 
-  const header = useMemo(
-    () => (csvRows.length > 0 ? csvRows[0] : []),
-    [csvRows]
-  );
-  const currentRow = useMemo(
-    () => (currentRowIndex > 0 ? csvRows[currentRowIndex] : []),
-    [csvRows, currentRowIndex]
-  );
-  const field = (name: string): string | undefined => {
-    const idx = header.indexOf(name);
-    if (idx === -1 || !currentRow || currentRow.length <= idx) return undefined;
-    return currentRow[idx];
-  };
-
-  const derivedCandidate = useMemo(() => {
-    if (header.length === 0 || currentRow.length === 0)
-      return MOCK_GAME_CANDIDATE;
-    const disposition = (field("disposition") || "").toUpperCase();
-    const isPlanet = disposition === "CONFIRMED";
-    const pl_orbper = field("pl_orbper");
-    const pl_rade = field("pl_rade");
-    const st_teff = field("st_teff");
-    const st_rad = field("st_rad");
-    const pl_eqt = field("pl_eqt");
-    const imgFromCsv = field("image");
-    const name = field("pl_name") || field("name") || "Unknown Candidate";
-
-    // Compute image URL: use explicit 'image' column if present, otherwise try name-based file in public/
-    const baseUrl = (import.meta as any).env?.BASE_URL || "/";
-    const toSlug = (s: string) => s.trim().replace(/\s+/g, "_");
-    const guessImage = `${toSlug(name)}.jpg`;
-    const imageUrl = `${baseUrl}${
-      imgFromCsv && imgFromCsv.trim().length ? imgFromCsv.trim() : guessImage
-    }`;
-    const features: { feature: string; importance: number }[] = [];
-    if (pl_orbper)
-      features.push({
-        feature: `Orbital Period: ${pl_orbper} d`,
-        importance: 0.3,
-      });
-    if (pl_rade)
-      features.push({
-        feature: `Planet Radius (R⊕): ${pl_rade}`,
-        importance: 0.25,
-      });
-    if (st_teff)
-      features.push({
-        feature: `Stellar Teff (K): ${st_teff}`,
-        importance: 0.2,
-      });
-    if (st_rad)
-      features.push({
-        feature: `Stellar Radius (R☉): ${st_rad}`,
-        importance: 0.15,
-      });
-    if (pl_eqt)
-      features.push({
-        feature: `Equilibrium Temp (K): ${pl_eqt}`,
-        importance: 0.1,
-      });
-    const normalized = features.map((f, i) => ({
-      ...f,
-      importance: features[i].importance,
-    }));
-    return {
-      id: name || "cand_csv",
-      lightCurveUrl: imageUrl,
-      aiPrediction: {
-        isPlanet,
-        confidence: 0.9,
-        reasoning: normalized,
-      },
-    } as typeof MOCK_GAME_CANDIDATE;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [header, currentRowIndex, csvRows]);
-
-  // Build a map of available images in /src/data/Images using Vite's glob.
-  // This ensures we use actual served URLs rather than assuming paths.
   const imageModules = import.meta.glob("/src/data/Images/*.{png,jpg}", {
     eager: true,
     query: "?url",
@@ -407,9 +303,8 @@ const HuntPlanetsGame = () => {
   Object.entries(imageModules).forEach(([path, url]) => {
     const name = path.split("/").pop()!.toLowerCase();
     imageNameToUrl[name] = url;
-  });
+  }); // Map from normalized feature key to image URL (built after planetData loads)
 
-  // Map from normalized feature key to image URL (built after planetData loads)
   const [planetFeatureImageMap, setPlanetFeatureImageMap] = useState<
     Record<string, string>
   >({});
@@ -422,9 +317,8 @@ const HuntPlanetsGame = () => {
     const ra = Math.round((parseFloat(p.ra_deg || "0") || 0) * 100);
     const dec = Math.round((parseFloat(p.dec_deg || "0") || 0) * 100);
     return `${orb}|${ra}|${dec}`;
-  };
+  }; // Build mapping from planet features (rounded) to image url by matching image filenames to planet names/aliases
 
-  // Build mapping from planet features (rounded) to image url by matching image filenames to planet names/aliases
   useEffect(() => {
     if (!planetData || planetData.length === 0) return;
     const map: Record<string, string> = {};
@@ -441,8 +335,7 @@ const HuntPlanetsGame = () => {
 
       const names = [p.planet_name, (p as any).pl_name, (p as any).name].map(
         (x) => (x || "").toLowerCase()
-      );
-      // Try to find an image filename that matches one of the planet's names
+      ); // Try to find an image filename that matches one of the planet's names
       let foundUrl: string | undefined = undefined;
       for (const [fname, url] of Object.entries(imageNameToUrl)) {
         const base = cleanedImageName(fname);
@@ -466,12 +359,10 @@ const HuntPlanetsGame = () => {
     }
 
     setPlanetFeatureImageMap(map);
-  }, [planetData]);
+  }, [planetData]); // Debug: log mapping so you can see which planets matched images
 
-  // Debug: log mapping so you can see which planets matched images
   useEffect(() => {
-    if (Object.keys(planetFeatureImageMap).length === 0) return;
-    // eslint-disable-next-line no-console
+    if (Object.keys(planetFeatureImageMap).length === 0) return; // eslint-disable-next-line no-console
     console.info("[planetImageMap]", planetFeatureImageMap);
   }, [planetFeatureImageMap]);
 
@@ -495,8 +386,7 @@ const HuntPlanetsGame = () => {
       "/favicon.ico";
     const raw = (
       typeof planet === "string" ? planet : planet?.planet_name || ""
-    ).trim();
-    // Attempt to pick an image by features first via explicit mapping
+    ).trim(); // Attempt to pick an image by features first via explicit mapping
     const featureKey = makeFeatureKey(planet as PlanetData | null);
     const mapped = planetFeatureImageMap[featureKey] || null;
     const chosenByFeatures =
@@ -523,18 +413,16 @@ const HuntPlanetsGame = () => {
         const key = `${v}${ext}`.toLowerCase();
         if (imageNameToUrl[key]) candidates.push(imageNameToUrl[key]);
       }
-    }
+    } // If we found none, try basename matches in the map (some filenames include prefixes)
 
-    // If we found none, try basename matches in the map (some filenames include prefixes)
     if (candidates.length === 0) {
       for (const [name, url] of Object.entries(imageNameToUrl)) {
         if (name.includes(raw.toLowerCase().replace(/[^a-z0-9]/g, ""))) {
           candidates.push(url);
         }
       }
-    }
+    } // Put chosenByFeatures first if available and not already present
 
-    // Put chosenByFeatures first if available and not already present
     if (chosenByFeatures) {
       if (!candidates.includes(chosenByFeatures))
         candidates.unshift(chosenByFeatures);
@@ -545,9 +433,8 @@ const HuntPlanetsGame = () => {
           ...candidates.filter((c) => c !== chosenByFeatures),
         ];
       }
-    }
+    } // Always include fallback
 
-    // Always include fallback
     if (
       candidates.length === 0 ||
       candidates[candidates.length - 1] !== defaultImage
@@ -556,12 +443,10 @@ const HuntPlanetsGame = () => {
     }
 
     return candidates;
-  };
+  }; // Image state: track which candidate index we are showing to avoid repeated onError loops
 
-  // Image state: track which candidate index we are showing to avoid repeated onError loops
-  const [imageIndex, setImageIndex] = useState<number>(0);
+  const [imageIndex, setImageIndex] = useState<number>(0); // Reset imageIndex when currentPlanet changes
 
-  // Reset imageIndex when currentPlanet changes
   useEffect(() => {
     setImageIndex(0);
   }, [currentPlanet]);
@@ -572,22 +457,27 @@ const HuntPlanetsGame = () => {
 
   return (
     <Section className="bg-gradient-to-b from-slate-900 to-slate-950 text-white min-h-screen">
+      {" "}
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Game Panel */}
+        {/* Main Game Panel */}{" "}
         <div className="lg:col-span-2">
+          {" "}
           <h2 className="text-4xl font-bold text-center mb-2">
-            Planet Trivia Challenge
-          </h2>
+            Planet Trivia Challenge{" "}
+          </h2>{" "}
           <Card>
+            {" "}
             {currentPlanet ? (
               <>
+                {" "}
                 <div className="mb-6">
+                  {" "}
                   <h3 className="text-xl font-bold text-cyan-400 mb-4">
-                    {currentPlanet.planet_name}
+                    {currentPlanet.planet_name}{" "}
                   </h3>
-
-                  {/* Add Planet Image */}
+                  {/* Add Planet Image */}{" "}
                   <div className="bg-slate-800 p-4 rounded-lg mb-6 flex justify-center items-center">
+                    {" "}
                     <img
                       src={imageCandidates[imageIndex]}
                       alt={currentPlanet.planet_name}
@@ -605,32 +495,35 @@ const HuntPlanetsGame = () => {
                           return next < imageCandidates.length ? next : i;
                         });
                       }}
-                    />
-                  </div>
-                </div>
-
+                    />{" "}
+                  </div>{" "}
+                </div>{" "}
                 {userGuess === null ? (
                   <div>
+                    {" "}
                     <h3 className="text-xl font-semibold text-center mb-4">
-                      {currentPlanet.Question}
+                      {currentPlanet.Question}{" "}
                     </h3>
-
-                    {/* Feature Bars */}
+                    {/* Feature Bars */}{" "}
                     <div className="space-y-4 mb-6">
+                      {" "}
                       {getPlanetFeatures(currentPlanet).map((feature) => (
                         <div
                           key={feature.label}
                           className="bg-slate-800 p-4 rounded-lg"
                         >
+                          {" "}
                           <div className="flex justify-between text-sm text-slate-300 mb-2">
-                            <span>{feature.label}:</span>
+                            <span>{feature.label}:</span>{" "}
                             <span>
+                              {" "}
                               {isNaN(parseFloat(feature.value))
                                 ? "N/A"
-                                : parseFloat(feature.value).toFixed(2)}
-                            </span>
-                          </div>
+                                : parseFloat(feature.value).toFixed(2)}{" "}
+                            </span>{" "}
+                          </div>{" "}
                           <div className="w-full bg-slate-700 rounded-full h-2.5">
+                            {" "}
                             <motion.div
                               className="bg-cyan-500 h-2.5 rounded-full"
                               initial={{ width: 0 }}
@@ -641,13 +534,13 @@ const HuntPlanetsGame = () => {
                                 )}%`,
                               }}
                               transition={{ duration: 0.8 }}
-                            />
-                          </div>
+                            />{" "}
+                          </div>{" "}
                         </div>
-                      ))}
-                    </div>
-
+                      ))}{" "}
+                    </div>{" "}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {" "}
                       {shuffledChoices.map((choice, index) => (
                         <motion.button
                           key={index}
@@ -655,24 +548,30 @@ const HuntPlanetsGame = () => {
                           onClick={() => handleGuess(choice)}
                           className="w-full flex items-center justify-center p-4 text-lg font-bold bg-slate-700 text-white border-2 border-slate-600 rounded-lg hover:bg-slate-600 transition"
                         >
-                          {choice}
+                          {choice}{" "}
                         </motion.button>
-                      ))}
-                    </div>
+                      ))}{" "}
+                    </div>{" "}
                   </div>
                 ) : (
                   <AnimatePresence>
+                    {" "}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                     >
+                      {" "}
                       <h3 className="text-2xl font-bold text-center">
-                        Results
-                      </h3>
+                        Results{" "}
+                      </h3>{" "}
                       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                        {" "}
                         <div className="p-4 bg-slate-700/50 rounded-lg">
-                          <p className="text-sm text-slate-400">Your Answer</p>
+                          {" "}
+                          <p className="text-sm text-slate-400">
+                            Your Answer
+                          </p>{" "}
                           <p
                             className={`text-xl font-bold ${
                               userGuess === currentPlanet["Choice2(correct)"]
@@ -680,55 +579,60 @@ const HuntPlanetsGame = () => {
                                 : "text-red-400"
                             }`}
                           >
-                            {userGuess}
-                          </p>
-                        </div>
+                            {userGuess}{" "}
+                          </p>{" "}
+                        </div>{" "}
                         <div className="p-4 bg-slate-700/50 rounded-lg">
+                          {" "}
                           <p className="text-sm text-slate-400">
-                            Correct Answer
-                          </p>
+                            Correct Answer{" "}
+                          </p>{" "}
                           <p className={`text-xl font-bold text-green-400`}>
-                            {currentPlanet["Choice2(correct)"]}
-                          </p>
-                        </div>
-                      </div>
+                            {currentPlanet["Choice2(correct)"]}{" "}
+                          </p>{" "}
+                        </div>{" "}
+                      </div>{" "}
                       <div className="text-center mt-8">
+                        {" "}
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           onClick={resetGame}
                           className="px-8 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition"
                         >
-                          Next Question
-                        </motion.button>
-                      </div>
-                    </motion.div>
+                          Next Question{" "}
+                        </motion.button>{" "}
+                      </div>{" "}
+                    </motion.div>{" "}
                   </AnimatePresence>
-                )}
+                )}{" "}
               </>
             ) : (
               <div className="text-center p-8">
-                <p className="text-slate-400">Loading planet data...</p>
+                <p className="text-slate-400">Loading planet data...</p>{" "}
               </div>
-            )}
-          </Card>
+            )}{" "}
+          </Card>{" "}
         </div>
-        {/* Score and Leaderboard Panel */}
+        {/* Score and Leaderboard Panel */}{" "}
         <div className="space-y-8">
+          {" "}
           <Card>
+            {" "}
             <h3 className="text-xl font-bold text-center text-cyan-400">
-              Your Score
+              Your Score{" "}
             </h3>
-            <p className="text-5xl font-bold text-center mt-2">{score}</p>
+            <p className="text-5xl font-bold text-center mt-2">{score}</p>{" "}
             <div className="mt-4 px-4 pb-4">
+              {" "}
               <label className="block text-sm text-slate-300 mb-2">
-                Username
-              </label>
+                Username{" "}
+              </label>{" "}
               <input
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 className="w-full px-3 py-2 rounded-md bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-600"
-              />
+              />{" "}
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 onClick={saveScore}
@@ -739,25 +643,26 @@ const HuntPlanetsGame = () => {
                     : "bg-cyan-600 hover:bg-cyan-700"
                 }`}
               >
-                {saving ? "Saving..." : "Save Score"}
-              </motion.button>
+                {saving ? "Saving..." : "Save Score"}{" "}
+              </motion.button>{" "}
               {(saveError || saveMessage) && (
                 <p
                   className={`mt-2 text-sm ${
                     saveError ? "text-red-400" : "text-green-400"
                   }`}
                 >
-                  {saveError || saveMessage}
+                  {saveError || saveMessage}{" "}
                 </p>
-              )}
-            </div>
-          </Card>
+              )}{" "}
+            </div>{" "}
+          </Card>{" "}
           <Card>
+            {" "}
             <h3 className="text-xl font-bold text-center flex items-center justify-center text-cyan-400 mb-4">
-              <Crown className="mr-2 text-yellow-400" />
-              Leaderboard
-            </h3>
+              <Crown className="mr-2 text-yellow-400" /> Leaderboard{" "}
+            </h3>{" "}
             <ul className="space-y-3">
+              {" "}
               {(leaderboard.length
                 ? leaderboard
                 : [
@@ -770,23 +675,24 @@ const HuntPlanetsGame = () => {
                   key={player.name}
                   className="flex justify-between items-center p-2 bg-slate-700/50 rounded-md"
                 >
+                  {" "}
                   <span className="font-semibold">
-                    {index + 1}. {player.name}
-                  </span>
+                    {index + 1}. {player.name}{" "}
+                  </span>{" "}
                   <span className="font-bold text-cyan-300">
-                    {player.score}
-                  </span>
+                    {player.score}{" "}
+                  </span>{" "}
                 </li>
-              ))}
-            </ul>
-          </Card>
+              ))}{" "}
+            </ul>{" "}
+          </Card>{" "}
           {csvError && (
             <Card>
-              <p className="text-sm text-yellow-400 px-4 py-2">{csvError}</p>
+              <p className="text-sm text-yellow-400 px-4 py-2">{csvError}</p>{" "}
             </Card>
-          )}
-        </div>
-      </div>
+          )}{" "}
+        </div>{" "}
+      </div>{" "}
     </Section>
   );
 };

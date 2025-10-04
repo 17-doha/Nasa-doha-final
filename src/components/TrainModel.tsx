@@ -80,7 +80,6 @@ const App = () => {
   const [isTraining, setIsTraining] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [metricsJson, setMetricsJson] = useState<MetricsJson | null>(null);
-  // const fileInputRef = useRef<HTMLInputElement>(null); // removed unused variable
 
   // Appends a new message with a timestamp to the training log
   const appendStatus = (message: string) => {
@@ -381,7 +380,6 @@ const App = () => {
                             const file = e.target.files?.[0] || null;
                             setSelectedFile(file);
                           }}
-                          // ref={fileInputRef}
                         />
                       </label>
                     </div>
@@ -411,7 +409,6 @@ const App = () => {
                     >
                       Train/Test Split ({trainTestSplit}% Train)
                     </label>
-                    {/* FIXED: Parsed the event target value to an integer */}
                     <input
                       type="range"
                       min="50"
@@ -530,6 +527,83 @@ const App = () => {
                   )}
                 </div>
               </Card>
+
+              {/* --- FIX START: Display metrics when available --- */}
+              {metricsJson && metricsJson.models.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <h2 className="text-2xl font-bold text-white mb-4 border-b border-slate-700 pb-3">
+                      📊 Model Results
+                    </h2>
+                    {metricsJson.models.map((model, index) => (
+                      <div key={index} className="space-y-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-cyan-400">
+                            {model.modelName} (v{model.version})
+                          </h3>
+                          <p className="text-xs text-slate-500">
+                            Trained on:{" "}
+                            {new Date(model.trainingDate).toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                          <div>
+                            <strong className="text-slate-400">
+                              Accuracy:
+                            </strong>
+                            <span className="ml-2 font-mono text-cyan-300">
+                              {model.metrics.accuracy.toFixed(4)}
+                            </span>
+                          </div>
+                          <div>
+                            <strong className="text-slate-400">
+                              F1 (Macro):
+                            </strong>
+                            <span className="ml-2 font-mono text-cyan-300">
+                              {model.metrics.f1_macro.toFixed(4)}
+                            </span>
+                          </div>
+                          <div>
+                            <strong className="text-slate-400">
+                              Precision:
+                            </strong>
+                            <span className="ml-2 font-mono text-cyan-300">
+                              {model.metrics.precision_macro.toFixed(4)}
+                            </span>
+                          </div>
+                          <div>
+                            <strong className="text-slate-400">Recall:</strong>
+                            <span className="ml-2 font-mono text-cyan-300">
+                              {model.metrics.recall_macro.toFixed(4)}
+                            </span>
+                          </div>
+                          <div className="col-span-2">
+                            <strong className="text-slate-400">
+                              ROC AUC (OVO):
+                            </strong>
+                            <span className="ml-2 font-mono text-cyan-300">
+                              {model.metrics.roc_auc_ovo.toFixed(4)}
+                            </span>
+                          </div>
+                          <div className="col-span-2">
+                            <strong className="text-slate-400">
+                              ROC AUC (OVR):
+                            </strong>
+                            <span className="ml-2 font-mono text-cyan-300">
+                              {model.metrics.roc_auc_ovr.toFixed(4)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </Card>
+                </motion.div>
+              )}
+              {/* --- FIX END --- */}
             </div>
           </div>
         </div>
