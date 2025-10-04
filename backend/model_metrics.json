@@ -3,16 +3,16 @@
     {
       "modelName": "Stacking Classifier",
       "version": "2.2.0",
-      "trainingDate": "2025-10-03",
+      "trainingDate": "2025-10-04",
       "isActive": true,
       "notes": "Holdout evaluation from dynamic training.",
       "metrics": {
-        "accuracy": 0.7182,
-        "precision_macro": 0.6878,
-        "recall_macro": 0.7025,
-        "f1_macro": 0.6904,
-        "roc_auc_ovr": 0.8674,
-        "roc_auc_ovo": 0.8592
+        "accuracy": 0.7702,
+        "precision_macro": 0.7699,
+        "recall_macro": 0.776,
+        "f1_macro": 0.7718,
+        "roc_auc_ovr": 0.9098,
+        "roc_auc_ovo": 0.9118
       },
       "labels": [
         "CANDIDATE",
@@ -21,51 +21,51 @@
       ],
       "confusionMatrix": [
         [
-          235,
-          74,
-          87
+          1133,
+          225,
+          247
         ],
         [
-          96,
-          428,
-          25
+          148,
+          1050,
+          61
         ],
         [
-          181,
-          76,
-          711
+          174,
+          94,
+          997
         ]
       ],
       "report": {
         "CANDIDATE": {
-          "precision": 0.459,
-          "recall": 0.5934,
-          "f1_score": 0.5176,
-          "support": 396
+          "precision": 0.7787,
+          "recall": 0.7059,
+          "f1_score": 0.7405,
+          "support": 1605
         },
         "CONFIRMED": {
-          "precision": 0.7405,
-          "recall": 0.7796,
-          "f1_score": 0.7595,
-          "support": 549
+          "precision": 0.767,
+          "recall": 0.834,
+          "f1_score": 0.7991,
+          "support": 1259
         },
         "FALSE POSITIVE": {
-          "precision": 0.8639,
-          "recall": 0.7345,
-          "f1_score": 0.794,
-          "support": 968
+          "precision": 0.764,
+          "recall": 0.7881,
+          "f1_score": 0.7759,
+          "support": 1265
         },
         "macro avg": {
-          "precision": 0.6878,
-          "recall": 0.7025,
-          "f1_score": 0.6904,
-          "support": 1913
+          "precision": 0.7699,
+          "recall": 0.776,
+          "f1_score": 0.7718,
+          "support": 4129
         },
         "weighted avg": {
-          "precision": 0.7447,
-          "recall": 0.7182,
-          "f1_score": 0.7269,
-          "support": 1913
+          "precision": 0.7706,
+          "recall": 0.7702,
+          "f1_score": 0.7692,
+          "support": 4129
         }
       }
     }
