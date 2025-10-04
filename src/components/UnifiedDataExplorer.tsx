@@ -23,9 +23,9 @@ type Dataset = {
 };
 
 const csvFiles = [
-  { name: 'KOI', file: '/cumulative_2025.09.24_03.42.53.csv' },
-  { name: 'TOI', file: '/TOI_2025.09.24_03.43.03.csv' },
-  { name: 'K2', file: '/k2pandc_2025.09.24_03.43.09.csv' },
+  { name: 'KOI', file: 'C:\Users\Doha\Downloads\Nasa-doha-final\Nasa-doha-final\src\components\cumulative_2025.09.24_03.42.53.csv' },
+  { name: 'TOI', file: 'C:\Users\Doha\Downloads\Nasa-doha-final\Nasa-doha-final\src\components\TOI_2025.09.24_03.43.03.csv' },
+  { name: 'K2', file: 'C:\Users\Doha\Downloads\Nasa-doha-final\Nasa-doha-final\src\components\k2pandc_2025.09.24_03.43.09.csv' },
 ];
 
 function parseCSV(text: string): any[] {
