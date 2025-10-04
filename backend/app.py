@@ -31,6 +31,8 @@ except ImportError:
 app = Flask(__name__)
 CORS(app)
 
+pipeline = None
+metadata = None
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -168,6 +170,7 @@ def load_global_artifacts():
         traceback.print_exc()
 
 
+load_global_artifacts()
 def parse_hyperparameters(form_data):
     """
     Safely parse hyperparameters from form data, converting them to correct numeric types.
@@ -281,7 +284,7 @@ def _prepare_uploaded_data(df_raw: pd.DataFrame) -> pd.DataFrame:
 
 # --- API Endpoints ---
 
-@app.route("/classify", methods=["POST"])
+@app.route("/api/classify", methods=["POST"])
 def classify():
     """Handles the POST request for classification, including feature engineering."""
     if pipeline is None or metadata is None:
@@ -478,6 +481,5 @@ def train_model_endpoint():
 
 
 if __name__ == "__main__":
-    load_global_artifacts()
     # Run on port 5000 to match frontend expectations
     app.run(debug=True, port=5000)

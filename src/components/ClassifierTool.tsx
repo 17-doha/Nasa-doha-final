@@ -1,7 +1,16 @@
 // ClassifierTool.tsx
 import React, { useState, useCallback, type ChangeEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { UploadCloud, Bot, BarChart, AlertCircle, FileText, Eye, X, CheckCircle } from "lucide-react";
+import {
+  UploadCloud,
+  Bot,
+  BarChart,
+  AlertCircle,
+  FileText,
+  Eye,
+  X,
+  CheckCircle,
+} from "lucide-react";
 import Card from "./ui/Card";
 
 import { Bar, Pie } from "react-chartjs-2";
@@ -19,7 +28,17 @@ import {
 } from "chart.js";
 
 // Register once
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 type InputFields =
   | "orbital_period_days"
@@ -56,20 +75,71 @@ const FIELD_DEFINITIONS: {
     isTemperature: boolean;
   };
 } = {
-  orbital_period_days: { label: "Orbital Period", placeholder: "Orbital Period (days)", isPositiveOrZero: true, isTemperature: false },
-  planet_radius_rearth: { label: "Planet Radius", placeholder: "Planet Radius (Earth radii)", isPositiveOrZero: true, isTemperature: false },
-  insolation_flux_eflux: { label: "Insolation Flux", placeholder: "Insolation Flux (Earth flux)", isPositiveOrZero: true, isTemperature: false },
-  equilibrium_temp_K: { label: "Equilibrium Temp", placeholder: "Equilibrium Temp (K)", isPositiveOrZero: true, isTemperature: true },
-  stellar_teff_K: { label: "Stellar Effective Temp", placeholder: "Stellar Effective Temp (K)", isPositiveOrZero: true, isTemperature: true },
-  stellar_logg_cgs: { label: "Stellar log(g)", placeholder: "Stellar log(g) (cgs)", isPositiveOrZero: false, isTemperature: false },
-  stellar_radius_rsun: { label: "Stellar Radius", placeholder: "Stellar Radius (Solar radii)", isPositiveOrZero: true, isTemperature: false },
-  stellar_mag: { label: "Stellar Magnitude", placeholder: "Stellar Magnitude", isPositiveOrZero: false, isTemperature: false },
-  ra_deg: { label: "Right Ascension", placeholder: "Right Ascension (deg)", isPositiveOrZero: false, isTemperature: false },
-  dec_deg: { label: "Declination", placeholder: "Declination (deg)", isPositiveOrZero: false, isTemperature: false },
+  orbital_period_days: {
+    label: "Orbital Period",
+    placeholder: "Orbital Period (days)",
+    isPositiveOrZero: true,
+    isTemperature: false,
+  },
+  planet_radius_rearth: {
+    label: "Planet Radius",
+    placeholder: "Planet Radius (Earth radii)",
+    isPositiveOrZero: true,
+    isTemperature: false,
+  },
+  insolation_flux_eflux: {
+    label: "Insolation Flux",
+    placeholder: "Insolation Flux (Earth flux)",
+    isPositiveOrZero: true,
+    isTemperature: false,
+  },
+  equilibrium_temp_K: {
+    label: "Equilibrium Temp",
+    placeholder: "Equilibrium Temp (K)",
+    isPositiveOrZero: true,
+    isTemperature: true,
+  },
+  stellar_teff_K: {
+    label: "Stellar Effective Temp",
+    placeholder: "Stellar Effective Temp (K)",
+    isPositiveOrZero: true,
+    isTemperature: true,
+  },
+  stellar_logg_cgs: {
+    label: "Stellar log(g)",
+    placeholder: "Stellar log(g) (cgs)",
+    isPositiveOrZero: false,
+    isTemperature: false,
+  },
+  stellar_radius_rsun: {
+    label: "Stellar Radius",
+    placeholder: "Stellar Radius (Solar radii)",
+    isPositiveOrZero: true,
+    isTemperature: false,
+  },
+  stellar_mag: {
+    label: "Stellar Magnitude",
+    placeholder: "Stellar Magnitude",
+    isPositiveOrZero: false,
+    isTemperature: false,
+  },
+  ra_deg: {
+    label: "Right Ascension",
+    placeholder: "Right Ascension (deg)",
+    isPositiveOrZero: false,
+    isTemperature: false,
+  },
+  dec_deg: {
+    label: "Declination",
+    placeholder: "Declination (deg)",
+    isPositiveOrZero: false,
+    isTemperature: false,
+  },
 };
 
 const ClassifierTool: React.FC = () => {
-  const [classificationResult, setClassificationResult] = useState<ClassificationResult | null>(null);
+  const [classificationResult, setClassificationResult] =
+    useState<ClassificationResult | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<CsvRow[]>([]);
   const [errors, setErrors] = useState<Errors>({});
@@ -77,17 +147,24 @@ const ClassifierTool: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showFormatInfo, setShowFormatInfo] = useState(false);
 
-  const requiredHeaders: InputFields[] = Object.keys(FIELD_DEFINITIONS) as InputFields[];
+  const requiredHeaders: InputFields[] = Object.keys(
+    FIELD_DEFINITIONS
+  ) as InputFields[];
 
-  const initialFormData: ClassificationData = requiredHeaders.reduce((acc, key) => {
-    acc[key] = "";
-    return acc;
-  }, {} as ClassificationData);
+  const initialFormData: ClassificationData = requiredHeaders.reduce(
+    (acc, key) => {
+      acc[key] = "";
+      return acc;
+    },
+    {} as ClassificationData
+  );
 
   const [formData, setFormData] = useState<ClassificationData>(initialFormData);
 
   const clearUpload = useCallback(() => {
-    const fileInput = document.getElementById("file-upload") as HTMLInputElement | null;
+    const fileInput = document.getElementById(
+      "file-upload"
+    ) as HTMLInputElement | null;
     if (fileInput) fileInput.value = "";
     setUploadedFile(null);
     setCsvPreview([]);
@@ -111,16 +188,22 @@ const ClassifierTool: React.FC = () => {
       try {
         const text = (event.target?.result as string) ?? "";
         const rows = text.trim().split(/\r?\n/);
-        if (rows.length < 2) throw new Error("CSV must have a header and at least one data row.");
+        if (rows.length < 2)
+          throw new Error("CSV must have a header and at least one data row.");
 
-        const headers = rows[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+        const headers = rows[0]
+          .split(",")
+          .map((h) => h.trim().replace(/^"|"$/g, ""));
         const headerIndex = new Map<string, number>();
         headers.forEach((h, i) => headerIndex.set(h, i));
 
         const missing = requiredHeaders.filter((h) => !headerIndex.has(h));
-        if (missing.length) throw new Error(`Missing required columns: ${missing.join(", ")}`);
+        if (missing.length)
+          throw new Error(`Missing required columns: ${missing.join(", ")}`);
 
-        const first = rows[1].split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+        const first = rows[1]
+          .split(",")
+          .map((v) => v.trim().replace(/^"|"$/g, ""));
         const nextForm = { ...initialFormData };
         requiredHeaders.forEach((h) => {
           const idx = headerIndex.get(h);
@@ -128,7 +211,9 @@ const ClassifierTool: React.FC = () => {
         });
 
         const preview = rows.slice(1).map((row) => {
-          const values = row.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+          const values = row
+            .split(",")
+            .map((v) => v.trim().replace(/^"|"$/g, ""));
           const obj: CsvRow = {};
           headers.forEach((h, i) => (obj[h] = values[i] ?? ""));
           return obj;
@@ -186,22 +271,29 @@ const ClassifierTool: React.FC = () => {
   const runClassification = async () => {
     setClassificationResult(null);
     if (!validateData(formData)) {
-      setErrors((prev) => ({ ...prev, submit: "Please correct errors before submitting." }));
+      setErrors((prev) => ({
+        ...prev,
+        submit: "Please correct errors before submitting.",
+      }));
       return;
     }
 
-    const payload = Object.fromEntries(Object.entries(formData).map(([k, v]) => [k, Number(v)]));
+    const payload = Object.fromEntries(
+      Object.entries(formData).map(([k, v]) => [k, Number(v)])
+    );
 
     setIsLoading(true);
     try {
-      const response = await fetch("/api/classify", { 
+      const response = await fetch("/api/classify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
-      if (!data.prediction || !data.shap_values) throw new Error("Invalid response format from server.");
+      if (!response.ok)
+        throw new Error(data.error || `Request failed (${response.status})`);
+      if (!data.prediction || !data.shap_values)
+        throw new Error("Invalid response format from server.");
       setClassificationResult(data as ClassificationResult);
     } catch (err) {
       setErrors({ submit: (err as Error).message });
@@ -211,52 +303,58 @@ const ClassifierTool: React.FC = () => {
   };
 
   // --- NEW: chart data helpers (computed once when we have a result) ---
-  const confidencePieData =
-    classificationResult && {
-      labels: ["Confidence", "Uncertainty"],
-      datasets: [
-        {
-          data: [
-            Math.max(0, Math.min(1, classificationResult.confidence)) * 100,
-            100 - Math.max(0, Math.min(1, classificationResult.confidence)) * 100,
-          ],
-          backgroundColor: ["rgba(34,197,94,0.85)", "rgba(148,163,184,0.25)"], // green + muted slate
-          borderWidth: 0,
-        },
-      ],
-    };
+  const confidencePieData = classificationResult && {
+    labels: ["Confidence", "Uncertainty"],
+    datasets: [
+      {
+        data: [
+          Math.max(0, Math.min(1, classificationResult.confidence)) * 100,
+          100 - Math.max(0, Math.min(1, classificationResult.confidence)) * 100,
+        ],
+        backgroundColor: ["rgba(34,197,94,0.85)", "rgba(148,163,184,0.25)"], // green + muted slate
+        borderWidth: 0,
+      },
+    ],
+  };
 
   const shapTop5 = (classificationResult?.shap_values ?? [])
     .map((d) => ({ feature: d.feature, value: Number(d.value) || 0 }))
     .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
     .slice(0, 5);
 
-  const shapBarData =
-    shapTop5.length > 0 && {
-      labels: shapTop5.map((d) => d.feature),
-      datasets: [
-        {
-          label: "SHAP value",
-          data: shapTop5.map((d) => d.value),
-          backgroundColor: shapTop5.map((d) => (d.value >= 0 ? "rgba(34,197,94,0.7)" : "rgba(239,68,68,0.7)")), // green for +, red for -
-          borderWidth: 0,
-        },
-      ],
-    };
+  const shapBarData = shapTop5.length > 0 && {
+    labels: shapTop5.map((d) => d.feature),
+    datasets: [
+      {
+        label: "SHAP value",
+        data: shapTop5.map((d) => d.value),
+        backgroundColor: shapTop5.map((d) =>
+          d.value >= 0 ? "rgba(34,197,94,0.7)" : "rgba(239,68,68,0.7)"
+        ), // green for +, red for -
+        borderWidth: 0,
+      },
+    ],
+  };
 
   // commonGrid removed (unused)
 
   return (
     <div className="min-h-screen bg-slate-900 p-8">
-      <h1 className="text-3xl font-bold text-white mb-8">Exoplanet Candidate Classifier Tool 🚀</h1>
+      <h1 className="text-3xl font-bold text-white mb-8">
+        Exoplanet Candidate Classifier Tool 🚀
+      </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card>
-          <h2 className="text-2xl font-bold text-white mb-6">Submit Candidate Data</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Submit Candidate Data
+          </h2>
 
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-slate-300">Upload CSV Dataset (Classifies first row)</label>
+              <label className="block text-sm font-medium text-slate-300">
+                Upload CSV Dataset (Classifies first row)
+              </label>
               <button
                 onClick={() => setShowFormatInfo((v) => !v)}
                 className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1"
@@ -274,10 +372,13 @@ const ClassifierTool: React.FC = () => {
                   className="mb-3 p-3 bg-slate-900 rounded-md text-xs"
                 >
                   <div className="text-slate-400 space-y-1">
-                    <p className="text-white font-medium mb-2">Required Columns:</p>
+                    <p className="text-white font-medium mb-2">
+                      Required Columns:
+                    </p>
                     {requiredHeaders.map((key) => (
                       <div key={key}>
-                        <span className="text-cyan-400">{key}</span>: {FIELD_DEFINITIONS[key].label}
+                        <span className="text-cyan-400">{key}</span>:{" "}
+                        {FIELD_DEFINITIONS[key].label}
                       </div>
                     ))}
                   </div>
@@ -308,7 +409,14 @@ const ClassifierTool: React.FC = () => {
                       className="inline-flex items-center justify-center cursor-pointer bg-slate-800 rounded-md px-3 py-1 font-medium text-cyan-400 hover:text-cyan-300"
                     >
                       Upload a file
-                      <input id="file-upload" name="file-upload" type="file" accept=".csv" className="sr-only" onChange={handleFileUpload} />
+                      <input
+                        id="file-upload"
+                        name="file-upload"
+                        type="file"
+                        accept=".csv"
+                        className="sr-only"
+                        onChange={handleFileUpload}
+                      />
                     </label>
                     <span className="opacity-70 ml-2">or drag and drop</span>
                   </div>
@@ -320,7 +428,9 @@ const ClassifierTool: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span className="text-white text-sm font-medium">{uploadedFile.name}</span>
+                    <span className="text-white text-sm font-medium">
+                      {uploadedFile.name}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     {csvPreview.length > 0 && (
@@ -332,7 +442,11 @@ const ClassifierTool: React.FC = () => {
                         {showPreview ? "Hide" : "Preview"}
                       </button>
                     )}
-                    <button onClick={clearUpload} className="text-slate-300 hover:text-white" aria-label="Remove file">
+                    <button
+                      onClick={clearUpload}
+                      className="text-slate-300 hover:text-white"
+                      aria-label="Remove file"
+                    >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -346,13 +460,18 @@ const ClassifierTool: React.FC = () => {
                       exit={{ opacity: 0, height: 0 }}
                       className="mt-3 bg-slate-800 rounded p-3"
                     >
-                      <div className="text-xs text-slate-300 mb-2">Preview (first {Math.min(3, csvPreview.length)} rows):</div>
+                      <div className="text-xs text-slate-300 mb-2">
+                        Preview (first {Math.min(3, csvPreview.length)} rows):
+                      </div>
                       <div className="overflow-x-auto">
                         <table className="min-w-full text-xs table-auto">
                           <thead>
                             <tr className="border-b border-slate-600">
                               {Object.keys(csvPreview[0] || {}).map((key) => (
-                                <th key={key} className="text-left py-1 px-2 text-slate-300 font-medium whitespace-nowrap">
+                                <th
+                                  key={key}
+                                  className="text-left py-1 px-2 text-slate-300 font-medium whitespace-nowrap"
+                                >
                                   {key}
                                 </th>
                               ))}
@@ -362,7 +481,10 @@ const ClassifierTool: React.FC = () => {
                             {csvPreview.slice(0, 3).map((row, i) => (
                               <tr key={i} className="border-b border-slate-700">
                                 {Object.values(row).map((val, j) => (
-                                  <td key={j} className="py-1 px-2 text-slate-400 whitespace-nowrap">
+                                  <td
+                                    key={j}
+                                    className="py-1 px-2 text-slate-400 whitespace-nowrap"
+                                  >
                                     {val}
                                   </td>
                                 ))}
@@ -383,7 +505,9 @@ const ClassifierTool: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-3">Enter Single Data Entry</label>
+            <label className="block text-sm font-medium text-slate-300 mb-3">
+              Enter Single Data Entry
+            </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {requiredHeaders.map((key) => {
                 const def = FIELD_DEFINITIONS[key];
@@ -396,9 +520,15 @@ const ClassifierTool: React.FC = () => {
                       onChange={handleInputChange}
                       placeholder={`${def.placeholder}*`}
                       className={`w-full bg-slate-700 rounded-md p-2 text-white placeholder-slate-400 text-sm focus:ring-1 focus:ring-cyan-500 focus:outline-none ${
-                        errors[key] ? "border border-red-500" : "border border-slate-600"
+                        errors[key]
+                          ? "border border-red-500"
+                          : "border border-slate-600"
                       }`}
-                      inputMode={def.isPositiveOrZero || def.isTemperature ? "decimal" : "text"}
+                      inputMode={
+                        def.isPositiveOrZero || def.isTemperature
+                          ? "decimal"
+                          : "text"
+                      }
                     />
                     {errors[key] && (
                       <div className="flex items-center gap-1 mt-1 text-red-400 text-xs">
@@ -412,7 +542,11 @@ const ClassifierTool: React.FC = () => {
             </div>
 
             {errors.submit && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-3 bg-red-900/50 border border-red-700 rounded-md">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-3 bg-red-900/50 border border-red-700 rounded-md"
+              >
                 <div className="flex items-center gap-2 text-red-400">
                   <AlertCircle className="w-4 h-4" />
                   <span className="text-sm">{errors.submit}</span>
@@ -424,7 +558,9 @@ const ClassifierTool: React.FC = () => {
               onClick={runClassification}
               disabled={isLoading}
               className={`mt-6 w-full flex items-center justify-center gap-2 px-6 py-3 font-bold rounded-lg transition ${
-                isLoading ? "bg-slate-600 cursor-not-allowed text-slate-400" : "bg-cyan-600 hover:bg-cyan-700 text-white"
+                isLoading
+                  ? "bg-slate-600 cursor-not-allowed text-slate-400"
+                  : "bg-cyan-600 hover:bg-cyan-700 text-white"
               }`}
             >
               {isLoading ? (
@@ -441,17 +577,31 @@ const ClassifierTool: React.FC = () => {
         </Card>
 
         <Card>
-          <h2 className="text-2xl font-bold text-white mb-4">Classification Results</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Classification Results
+          </h2>
           <AnimatePresence mode="wait">
             {isLoading && (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center h-full">
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center h-full"
+              >
                 <Bot className="w-16 h-16 text-cyan-500 animate-pulse" />
-                <p className="mt-4 text-slate-300">AI is analyzing the data...</p>
+                <p className="mt-4 text-slate-300">
+                  AI is analyzing the data...
+                </p>
               </motion.div>
             )}
 
             {classificationResult && !isLoading && (
-              <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <motion.div
+                key="results"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Left: textual summary */}
                   <div className="text-center bg-slate-900 p-6 rounded-lg">
@@ -468,7 +618,10 @@ const ClassifierTool: React.FC = () => {
                       {classificationResult.prediction}
                     </p>
                     <p className="text-sm text-slate-300 mt-2">
-                      Confidence: <span className="font-bold text-white">{(classificationResult.confidence * 100).toFixed(1)}%</span>
+                      Confidence:{" "}
+                      <span className="font-bold text-white">
+                        {(classificationResult.confidence * 100).toFixed(1)}%
+                      </span>
                     </p>
                   </div>
 
@@ -492,9 +645,13 @@ const ClassifierTool: React.FC = () => {
                 </div>
 
                 <div className="mt-8">
-                  <h3 className="font-semibold text-cyan-400 mb-3">AI Transparency Dashboard (Top 5 Features)</h3>
+                  <h3 className="font-semibold text-cyan-400 mb-3">
+                    AI Transparency Dashboard (Top 5 Features)
+                  </h3>
                   <p className="text-sm text-slate-400 mb-4">
-                    How the top 5 most impactful features contributed to the prediction. Green values increase confidence, red values decrease it.
+                    How the top 5 most impactful features contributed to the
+                    prediction. Green values increase confidence, red values
+                    decrease it.
                   </p>
 
                   {/* Existing animated bars */}
@@ -503,19 +660,33 @@ const ClassifierTool: React.FC = () => {
                       <div className="space-y-3">
                         {(() => {
                           const items = [...classificationResult.shap_values]
-                            .map((it) => ({ feature: it.feature, value: Number(it.value) || 0 }))
-                            .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+                            .map((it) => ({
+                              feature: it.feature,
+                              value: Number(it.value) || 0,
+                            }))
+                            .sort(
+                              (a, b) => Math.abs(b.value) - Math.abs(a.value)
+                            )
                             .slice(0, 5);
 
-                          const maxAbs = Math.max(1e-6, ...items.map((v) => Math.abs(v.value)));
+                          const maxAbs = Math.max(
+                            1e-6,
+                            ...items.map((v) => Math.abs(v.value))
+                          );
 
                           return items.map((item) => {
                             const frac = Math.abs(item.value) / maxAbs;
                             const isPos = item.value > 0;
 
                             return (
-                              <div key={item.feature} className="flex items-center gap-2">
-                                <span className="text-xs w-1/4 text-slate-300 truncate pr-2" title={item.feature}>
+                              <div
+                                key={item.feature}
+                                className="flex items-center gap-2"
+                              >
+                                <span
+                                  className="text-xs w-1/4 text-slate-300 truncate pr-2"
+                                  title={item.feature}
+                                >
                                   {item.feature}
                                 </span>
 
@@ -523,8 +694,13 @@ const ClassifierTool: React.FC = () => {
                                   <motion.div
                                     initial={{ scaleX: 0 }}
                                     animate={{ scaleX: Math.max(0.06, frac) }}
-                                    transition={{ duration: 0.6, ease: "easeOut" }}
-                                    className={`h-full origin-left rounded-full ${isPos ? "bg-green-500" : "bg-red-500"}`}
+                                    transition={{
+                                      duration: 0.6,
+                                      ease: "easeOut",
+                                    }}
+                                    className={`h-full origin-left rounded-full ${
+                                      isPos ? "bg-green-500" : "bg-red-500"
+                                    }`}
                                     style={{ width: "100%" }}
                                   />
                                   <div className="absolute inset-0 flex items-center justify-end pr-2 text-[10px] text-white/90 font-mono">
@@ -543,12 +719,14 @@ const ClassifierTool: React.FC = () => {
                           <Bar
                             data={{
                               labels: shapTop5.map((d) => d.feature),
-                                  datasets: [
+                              datasets: [
                                 {
                                   label: "SHAP value",
                                   data: shapTop5.map((d) => d.value),
                                   backgroundColor: shapTop5.map((d) =>
-                                    d.value >= 0 ? "rgba(34,197,94,0.75)" : "rgba(239,68,68,0.75)"
+                                    d.value >= 0
+                                      ? "rgba(34,197,94,0.75)"
+                                      : "rgba(239,68,68,0.75)"
                                   ),
                                   borderWidth: 0,
                                   barThickness: 12,
@@ -565,22 +743,36 @@ const ClassifierTool: React.FC = () => {
                               maintainAspectRatio: false,
                               plugins: {
                                 legend: { display: false },
-                                title: { display: true, text: "Top-5 Feature Impact (SHAP)" },
+                                title: {
+                                  display: true,
+                                  text: "Top-5 Feature Impact (SHAP)",
+                                },
                                 tooltip: {
                                   mode: "nearest",
                                   intersect: false,
                                   callbacks: {
-                                    label: (ctx) => `SHAP: ${Number(ctx.raw).toFixed(3)}`,
+                                    label: (ctx) =>
+                                      `SHAP: ${Number(ctx.raw).toFixed(3)}`,
                                   },
                                 },
                               },
-                              interaction: { mode: "nearest", axis: "y", intersect: false },
+                              interaction: {
+                                mode: "nearest",
+                                axis: "y",
+                                intersect: false,
+                              },
                               scales: {
                                 x: {
                                   grid: { color: "rgba(148,163,184,0.15)" },
                                   ticks: { color: "#e2e8f0" },
-                                  suggestedMin: -Math.max(0.5, ...shapTop5.map((d) => Math.abs(d.value))),
-                                  suggestedMax:  Math.max(0.5, ...shapTop5.map((d) => Math.abs(d.value))),
+                                  suggestedMin: -Math.max(
+                                    0.5,
+                                    ...shapTop5.map((d) => Math.abs(d.value))
+                                  ),
+                                  suggestedMax: Math.max(
+                                    0.5,
+                                    ...shapTop5.map((d) => Math.abs(d.value))
+                                  ),
                                 },
                                 y: {
                                   grid: { color: "rgba(148,163,184,0.08)" },
@@ -591,19 +783,28 @@ const ClassifierTool: React.FC = () => {
                           />
                         </div>
                       )}
-
                     </>
                   ) : (
-                    <div className="text-slate-500 text-sm">No SHAP values to display.</div>
+                    <div className="text-slate-500 text-sm">
+                      No SHAP values to display.
+                    </div>
                   )}
                 </div>
               </motion.div>
             )}
 
             {!classificationResult && !isLoading && (
-              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center h-full text-center">
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center h-full text-center"
+              >
                 <BarChart className="w-16 h-16 text-slate-600 mb-4" />
-                <p className="text-slate-500">Submit data to see the AI's classification and transparency report.</p>
+                <p className="text-slate-500">
+                  Submit data to see the AI's classification and transparency
+                  report.
+                </p>
               </motion.div>
             )}
           </AnimatePresence>

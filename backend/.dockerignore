@@ -1,19 +1,25 @@
-__pycache__
+# Git and OS files
+.git
+.DS_Store
+
+# Node.js
+node_modules
+npm-debug.log
+
+# Python
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-build
+env/
+venv/
+.venv/
+
+# IDE folders
+.vscode/
+.idea/
+
+# Build artifacts (if not needed in context)
 dist
-*.egg-info
-.tox
-.venv
-venv
-.git
-.gitignore
-.dockerignore
-Dockerfile*
-README.md
-*.pkl
-!backend/exo_model.pkl
-!backend/exo_meta.pkl
+build
