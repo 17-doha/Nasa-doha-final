@@ -258,7 +258,14 @@ const HuntPlanetsGame = () => {
   useEffect(() => {
     const loadPlanetData = async () => {
       try {
-        const response = await fetch("/src/data/planetsQuestions.csv");
+        const response = await fetch("/data/planetsQuestions.csv");
+
+        if (!response.ok) {
+          throw new Error(
+            `CSV not found at ${response.url} (status: ${response.status})`
+          );
+        }
+
         const text = await response.text();
         const lines = text.split("\n").filter((line) => line.trim());
         const headers = lines[0].split(",").map((h) => h.trim());
@@ -275,7 +282,7 @@ const HuntPlanetsGame = () => {
         setRandomPlanet(planets);
       } catch (error) {
         console.error("Error loading planet data:", error);
-        setCsvError("Failed to load planet data");
+        setCsvError("Failed to load planet data. Ensure planetsQuestions.csv is in the public/data folder.");
       }
     };
 
